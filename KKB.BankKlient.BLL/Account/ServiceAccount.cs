@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using n=NLog;
 
 namespace KKB.BankKlient.BLL.Account
 {
     public class ServiceAccount
     {
+        private static n.Logger logger = n.LogManager.GetCurrentClassLogger();
         Random rnd = new Random();
         public Account CreateAccount(User.User user, currency cur)
         {
@@ -38,6 +40,24 @@ namespace KKB.BankKlient.BLL.Account
             {
                 message = ex.Message;
                 return false;
+            }
+        }
+
+        public static List<Account> GetAccountsByUserId(int id)
+        {
+            try
+            {
+                using (var db = new LiteDatabase(@"kkb.db"))
+                {
+                    var accounts = db.GetCollection<Account>("Account");
+
+                    return accounts.FindAll().ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Get account by user Id has error: " + ex.Message);
+                return null;
             }
         }
     }

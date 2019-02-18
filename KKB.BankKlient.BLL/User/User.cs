@@ -17,6 +17,8 @@ namespace KKB.BankKlient.BLL.User
         public string Login { get; set; }
         public string Password { get; set; }
         public DateTime CreateDate { get; set; } = DateTime.Now;
+
+        public List<KKB.BankKlient.BLL.Account.Account> Accounts = new List<BLL.Account.Account>();
     }
 
     public class Doc

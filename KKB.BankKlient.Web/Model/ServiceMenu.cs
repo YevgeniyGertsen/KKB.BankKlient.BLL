@@ -6,12 +6,17 @@ using System.Text;
 using System.Threading.Tasks;
 using KKB.BankKlient.BLL.User.Account;
 using System.Threading;
+using KKB.BankKlient.BLL.Account;
+using n = NLog;
 
 namespace KKB.BankKlient.Web.Model
 {
+
     public class ServiceMenu
     {
-        private static ServiceUser service=null;
+        private static User AuthorUser = null;
+        private static ServiceUser service = null;
+        private static n.Logger logger = n.LogManager.GetCurrentClassLogger();
 
         static ServiceMenu()
         {
@@ -38,7 +43,7 @@ namespace KKB.BankKlient.Web.Model
                 LogOnMenu();
             }
         }
-        
+
         public static void RegisterMenu()
         {
             Console.Clear();
@@ -83,17 +88,20 @@ namespace KKB.BankKlient.Web.Model
 
             Console.Write("Login: ");
             string login = Console.ReadLine();
+            logger.Info("Login: " + login);
 
             Console.Write("Password: ");
             string password = Console.ReadLine();
-            
+            logger.Info("Password: " + password);
             string message = "";
-            User user = service.LogOn(login, password, 
+            User user = service.LogOn(login, password,
                                        out message);
 
-            if(user !=null)
+            if (user != null)
             {
-                AuthorizeUserMenu(user);
+                AuthorUser = user;
+                AuthorUser.Accounts = ServiceAccount.GetAccountsByUserId(AuthorUser.Id);
+                AuthorizeUserMenu();
             }
             else
             {
@@ -106,21 +114,56 @@ namespace KKB.BankKlient.Web.Model
             }
         }
 
-        public static void AuthorizeUserMenu(User user)
+        public static void AuthorizeUserMenu()
         {
             Console.Clear();
 
             Console.WriteLine("Приветствуем Вас, {0} {1}\n",
-                user.FirstName, user.LastName);
+                AuthorUser.FirstName, AuthorUser.LastName);
+            if (AuthorUser.Accounts != null && AuthorUser.Accounts.Count > 0)
+            {
+                Console.WriteLine("1. Вывод баланса на экран");
+                Console.WriteLine("2. Пополнение счёта");
+                Console.WriteLine("3. Снять деньги со счёта");
+            }
+            else
+            {
+                Console.WriteLine("5. Создать счет");
 
-            Console.WriteLine("1. Вывод баланса на экран");
-            Console.WriteLine("2. Пополнение счёта");
-            Console.WriteLine("3. Снять деньги со счёта");
+            }
             Console.WriteLine("4. Выход");
 
             Console.Write(": ");
             int menu = Int32.Parse(Console.ReadLine());
+            if (menu == 5)
+            {
+                ServiceAccount serviceAcc = new ServiceAccount();
+                Account acc = serviceAcc.CreateAccount(AuthorUser, currency.kzt);
+                string message = "";
+                if (serviceAcc.CreateAccountDb(acc, out message))
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+
+                    Console.WriteLine(message);
+                    Console.ForegroundColor = ConsoleColor.White;
+
+                    AuthorUser.Accounts = ServiceAccount.GetAccountsByUserId(AuthorUser.Id);
+
+                    Thread.Sleep(3000);
+                    AuthorizeUserMenu();
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(message);
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
+
+            }
+
         }
+        // public static void PrintBalanseOnScreen()
 
     }
 }
